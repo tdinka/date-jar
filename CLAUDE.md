@@ -11,7 +11,7 @@ A small private web app for Tsega and their wife: a shared jar of date ideas, "S
 - Postgres on Railway via Prisma. Use `prisma db push`, NEVER `prisma migrate dev`.
 - Sign-in: 6-digit email codes (own code, no NextAuth). Only emails in `ALLOWED_EMAILS` can sign in. Codes are stored hashed, expire in 10 minutes, 5 tries. Emails go through Resend; with no `RESEND_API_KEY` the code is printed in the dev terminal.
 - Session: signed cookie (`jose`, `SESSION_SECRET`), checked in `src/middleware.ts`. New public routes must be excluded in the middleware matcher.
-- Hosting: Railway; pushing to `main` deploys.
+- Hosting: Railway project "date-jar" (services: date-jar, Postgres). `npm start` runs `prisma db push` first, so schema changes apply on deploy (the database has no public address). db push refuses data-losing changes; never add --accept-data-loss.
 
 ## Look
 - Colours are CSS variables in `src/app/globals.css`, named in `tailwind.config.ts`: fog (background), dusk (Next date panel), jacaranda (actions only), amber (highlights, only behind dark text).

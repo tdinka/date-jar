@@ -18,7 +18,8 @@ A small private web app for Tsega and their wife: a shared jar of date ideas, "S
 - Colours are CSS variables in `src/app/globals.css`, named in `tailwind.config.ts`: fog (background), dusk (Next date panel), jacaranda (actions only), amber (highlights, only behind dark text).
 
 ## Related
-- Earlier prototype: claude.ai artifact "Our Date Jar" (https://claude.ai/artifact/8K2khJQxZLxjjbvWV4hJyY). The Sunday "Date night check-in" scheduled task still reads that artifact's data until it's switched to this app.
+- Sunday "Date night check-in" (Claude app scheduled task) uses `/api/agent/*` (state, ideas, plan, checkin) with `Authorization: Bearer <AGENT_TOKEN>`. The token is on Railway and in `~/.config/date-jar/agent-token` (mode 600) on Tsega's Mac. Never print it.
+- Earlier prototype (retired): claude.ai artifact "Our Date Jar".
 - Chat ("Plan with Claude"): `src/app/api/chat/route.ts` runs a manual tool loop on claude-opus-5-5 (effort low, server-side fallbacks "default"); tools in `src/lib/chat-tools.ts` (add_idea, log_date, set_next_date). Needs `ANTHROPIC_API_KEY` on Railway. Chat history lives in each browser (localStorage).
 - Not built yet (decided Oct 2026): Google Calendar in the app, booking requests in the app.
 

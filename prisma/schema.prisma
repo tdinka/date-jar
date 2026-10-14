@@ -67,3 +67,10 @@ model Plan {
   booking   String    @default("") // "" | "Needs booking" | "Booked"
   updatedAt DateTime  @updatedAt
 }
+
+// Small named values, e.g. "lastCheckin" for the Sunday check-in.
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}

@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { addIdea, clearNextDate, logDate, makeNextDate, removeIdea, setNextDateTime } from "@/app/actions";
+import Chat from "./Chat";
 
 export type IdeaView = {
   id: string;
@@ -134,6 +135,8 @@ export default function Jar({ ideas, plan, history, email }: { ideas: IdeaView[]
           </>
         )}
       </section>
+
+      <Chat />
 
       {/* Pull from the jar */}
       <section className="grid gap-3">

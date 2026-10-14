@@ -19,7 +19,8 @@ A small private web app for Tsega and their wife: a shared jar of date ideas, "S
 
 ## Related
 - Earlier prototype: claude.ai artifact "Our Date Jar" (https://claude.ai/artifact/8K2khJQxZLxjjbvWV4hJyY). The Sunday "Date night check-in" scheduled task still reads that artifact's data until it's switched to this app.
-- Not built yet (decided Oct 2026): in-app chat with Claude (needs Anthropic API key), Google Calendar in the app, booking requests in the app.
+- Chat ("Plan with Claude"): `src/app/api/chat/route.ts` runs a manual tool loop on claude-opus-5-5 (effort low, server-side fallbacks "default"); tools in `src/lib/chat-tools.ts` (add_idea, log_date, set_next_date). Needs `ANTHROPIC_API_KEY` on Railway. Chat history lives in each browser (localStorage).
+- Not built yet (decided Oct 2026): Google Calendar in the app, booking requests in the app.
 
 ## Gotchas
 - Back up `.env` before any file reorganizing.

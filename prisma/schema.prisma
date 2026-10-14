@@ -1,0 +1,69 @@
+// Date Jar — data model. Postgres on Railway. Use `prisma db push` (never `migrate dev`).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+
+  ideas Idea[]
+}
+
+// One-time sign-in codes. Only a hash of the code is stored.
+model LoginCode {
+  id        String    @id @default(cuid())
+  email     String
+  codeHash  String
+  expiresAt DateTime
+  attempts  Int       @default(0)
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([email, createdAt])
+}
+
+model Idea {
+  id           String    @id @default(cuid())
+  title        String
+  place        String    @default("")
+  notes        String    @default("")
+  cost         String    @default("$$") // "$" | "$$" | "$$$"
+  setting      String    @default("out") // "home" | "out"
+  needsBooking Boolean   @default(false)
+  status       String    @default("jar") // "jar" | "archived"
+  source       String    @default("us") // "us" | "claude"
+  createdAt    DateTime  @default(now())
+  addedById    String?
+  addedBy      User?     @relation(fields: [addedById], references: [id], onDelete: SetNull)
+
+  dates DateLog[]
+}
+
+// A date they actually went on.
+model DateLog {
+  id        String   @id @default(cuid())
+  ideaId    String
+  idea      Idea     @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+  date      DateTime @db.Date
+  createdAt DateTime @default(now())
+}
+
+// The next planned date. A single row with id "next".
+model Plan {
+  id        String    @id @default("next")
+  title     String
+  place     String    @default("")
+  ideaId    String?
+  when      DateTime?
+  booking   String    @default("") // "" | "Needs booking" | "Booked"
+  updatedAt DateTime  @updatedAt
+}

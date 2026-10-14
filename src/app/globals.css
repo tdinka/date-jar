@@ -1,0 +1,78 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --fog: 242 240 246;
+  --card: 255 255 255;
+  --ink: 34 27 51;
+  --muted: 106 99 120;
+  --line: 220 214 230;
+  --jacaranda: 107 71 168;
+  --on-jacaranda: 255 255 255;
+  --dusk: 44 34 70;
+  --on-dusk: 245 239 255;
+  --amber: 240 176 74;
+  --chip: 234 228 243;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fog: 21 17 31;
+    --card: 32 26 46;
+    --ink: 238 233 247;
+    --muted: 167 159 184;
+    --line: 58 49 80;
+    --jacaranda: 168 139 224;
+    --on-jacaranda: 23 15 38;
+    --dusk: 42 33 66;
+    --on-dusk: 245 239 255;
+    --chip: 45 37 64;
+    color-scheme: dark;
+  }
+}
+
+body {
+  @apply bg-fog text-ink font-body antialiased;
+}
+h1, h2, h3 {
+  @apply font-display;
+  text-wrap: balance;
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center rounded-xl px-4 py-2.5 font-semibold transition disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply btn bg-jacaranda text-on-jacaranda hover:brightness-110;
+  }
+  .btn-ghost {
+    @apply btn border border-line bg-transparent text-ink hover:border-jacaranda;
+  }
+  .btn-sm {
+    @apply px-3 py-1.5 text-sm rounded-lg;
+  }
+  .field {
+    @apply w-full rounded-lg border border-line bg-fog px-3 py-2 text-base text-ink;
+  }
+  .label {
+    @apply grid gap-1 text-sm font-semibold text-muted;
+  }
+  .tag {
+    @apply whitespace-nowrap rounded-full border border-line px-2 text-xs text-muted;
+  }
+  .eyebrow {
+    @apply text-xs font-semibold uppercase tracking-wider text-muted;
+  }
+}
+
+:focus-visible {
+  outline: 3px solid rgb(var(--amber));
+  outline-offset: 2px;
+}
+
+@keyframes pop {
+  from { transform: scale(0.97); }
+  to { transform: none; }
+}

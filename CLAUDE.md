@@ -1,0 +1,26 @@
+# Date Jar — notes for Claude Code
+
+A small private web app for Tsega and their wife: a shared jar of date ideas, "Surprise us" picks, the next planned date, and a history of dates. Two users only.
+
+## About the owner
+- Tsega is early in their technical journey. Explain every terminal command in plain words before running it, one step at a time, and say clearly when Tsega needs to do something themselves (GitHub Desktop, Railway, Resend).
+- Git: Tsega commits and pushes through GitHub Desktop. Don't run `git commit`/`git push` unless asked; when a change is ready, summarize what to look for in the diff.
+
+## Stack (matches Recipe Box, ~/Projects/recipe-app)
+- Next.js 14 (App Router, TypeScript) + Tailwind CSS. Fonts: Bricolage Grotesque (headings), Figtree (text).
+- Postgres on Railway via Prisma. Use `prisma db push`, NEVER `prisma migrate dev`.
+- Sign-in: 6-digit email codes (own code, no NextAuth). Only emails in `ALLOWED_EMAILS` can sign in. Codes are stored hashed, expire in 10 minutes, 5 tries. Emails go through Resend; with no `RESEND_API_KEY` the code is printed in the dev terminal.
+- Session: signed cookie (`jose`, `SESSION_SECRET`), checked in `src/middleware.ts`. New public routes must be excluded in the middleware matcher.
+- Hosting: Railway; pushing to `main` deploys.
+
+## Look
+- Colours are CSS variables in `src/app/globals.css`, named in `tailwind.config.ts`: fog (background), dusk (Next date panel), jacaranda (actions only), amber (highlights, only behind dark text).
+
+## Related
+- Earlier prototype: claude.ai artifact "Our Date Jar" (https://claude.ai/artifact/8K2khJQxZLxjjbvWV4hJyY). The Sunday "Date night check-in" scheduled task still reads that artifact's data until it's switched to this app.
+- Not built yet (decided Oct 2026): in-app chat with Claude (needs Anthropic API key), Google Calendar in the app, booking requests in the app.
+
+## Gotchas
+- Back up `.env` before any file reorganizing.
+- Double-check Railway env var names exactly.
+- Next.js 14.2: `useSearchParams` + `Suspense` + `force-dynamic` in a Server Component can stack-overflow; read `window.location.search` instead.

@@ -51,6 +51,33 @@ export async function setNextDateTime(when: string | null) {
   revalidatePath("/");
 }
 
+// "Ask Claude to book" for the next date. Claude picks it up and books after a yes in the Claude app.
+export async function requestBooking(notes: string) {
+  const session = await requireSession();
+  const plan = await prisma.plan.findUnique({ where: { id: "next" } });
+  if (!plan) throw new Error("No next date");
+  const open = await prisma.bookingRequest.findFirst({
+    where: { ideaId: plan.ideaId, status: { in: ["requested", "searching", "awaiting_yes"] } },
+  });
+  if (open) return;
+  await prisma.bookingRequest.create({
+    data: { ideaId: plan.ideaId, title: plan.title, place: plan.place, when: plan.when, notes: notes.slice(0, 400), requestedById: session.userId },
+  });
+  revalidatePath("/");
+}
+
+export async function cancelBooking(id: string) {
+  await requireSession();
+  await prisma.bookingRequest.update({ where: { id }, data: { status: "cancelled" } });
+  revalidatePath("/");
+}
+
+export async function markBooked() {
+  await requireSession();
+  await prisma.plan.update({ where: { id: "next" }, data: { booking: "Booked" } });
+  revalidatePath("/");
+}
+
 export async function clearNextDate() {
   await requireSession();
   await prisma.plan.deleteMany({ where: { id: "next" } });

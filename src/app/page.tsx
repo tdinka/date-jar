@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { requireSession } from "@/lib/require-session";
-import Jar, { type IdeaView, type PlanView } from "@/components/Jar";
+import Jar, { type BookingView, type CalendarView, type IdeaView, type PlanView } from "@/components/Jar";
+import { googleConfigured } from "@/lib/google";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +15,18 @@ export default async function Home() {
     }),
     prisma.plan.findUnique({ where: { id: "next" } }),
   ]);
+  const [links, booking] = await Promise.all([
+    prisma.googleConnection.findMany({ select: { userId: true, email: true } }),
+    plan?.ideaId
+      ? prisma.bookingRequest.findFirst({ where: { ideaId: plan.ideaId, status: { not: "cancelled" } }, orderBy: { createdAt: "desc" } })
+      : null,
+  ]);
+  const calendar: CalendarView = {
+    configured: googleConfigured(),
+    mine: links.find((l) => l.userId === session.userId)?.email ?? null,
+    anyConnected: links.length > 0,
+  };
+  const bookingView: BookingView | null = booking ? { id: booking.id, status: booking.status, result: booking.result } : null;
   const history = await prisma.dateLog.findMany({
     orderBy: { date: "desc" },
     take: 30,
@@ -42,6 +55,8 @@ export default async function Home() {
       plan={planView}
       history={history.map((h) => ({ id: h.id, title: h.idea.title, date: h.date.toISOString().slice(0, 10) }))}
       email={session.email}
+      calendar={calendar}
+      booking={bookingView}
     />
   );
 }

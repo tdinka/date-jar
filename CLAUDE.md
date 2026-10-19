@@ -21,7 +21,8 @@ A small private web app for Tsega and their wife: a shared jar of date ideas, "S
 - Sunday "Date night check-in" (Claude app scheduled task) uses `/api/agent/*` (state, ideas, plan, checkin) with `Authorization: Bearer <AGENT_TOKEN>`. The token is on Railway and in `~/.config/date-jar/agent-token` (mode 600) on Tsega's Mac. Never print it.
 - Earlier prototype (retired): claude.ai artifact "Our Date Jar".
 - Chat ("Plan with Claude"): `src/app/api/chat/route.ts` runs a manual tool loop on claude-opus-5-5 (effort low, server-side fallbacks "default"); tools in `src/lib/chat-tools.ts` (add_idea, log_date, set_next_date). Needs `ANTHROPIC_API_KEY` on Railway. Chat history lives in each browser (localStorage).
-- Not built yet (decided Oct 2026): Google Calendar in the app, booking requests in the app.
+- Google Calendar (busy/free only, scope calendar.freebusy): `src/lib/google.ts` (OAuth via fetch, refresh tokens AES-GCM encrypted with a key derived from SESSION_SECRET), `src/lib/free-slots.ts` (weeknights 6-10pm, weekends 11am-10pm LA, 2.5h minimum), connect/callback/disconnect under `/api/google/`. Needs `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `APP_URL` on Railway. Google Cloud project lives on tsega.dinka@gmail.com.
+- Bookings: Next date card has OpenTable/Resy search links (pre-filled), "Ask Claude to book" (BookingRequest table; the Sunday check-in works the queue via `/api/agent/state` + `/api/agent/bookings`), and "We booked it".
 
 ## Gotchas
 - Back up `.env` before any file reorganizing.

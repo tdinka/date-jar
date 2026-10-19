@@ -74,3 +74,29 @@ model Setting {
   value     String
   updatedAt DateTime @updatedAt
 }
+
+// A signed-in person's Google Calendar link (busy/free only). The refresh token is stored encrypted.
+model GoogleConnection {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  email             String
+  refreshTokenEnc   String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+// "Ask Claude to book": Claude picks these up and books after a yes in the Claude app.
+model BookingRequest {
+  id            String   @id @default(cuid())
+  ideaId        String?
+  title         String
+  place         String   @default("")
+  when          DateTime?
+  partySize     Int      @default(2)
+  notes         String   @default("")
+  status        String   @default("requested") // requested | searching | awaiting_yes | booked | failed | cancelled
+  result        String   @default("")
+  requestedById String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}

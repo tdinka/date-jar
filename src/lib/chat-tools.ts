@@ -2,6 +2,7 @@
 import type Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 import { prisma } from "./db";
+import { freeSlots } from "./free-slots";
 
 type Tool = Anthropic.Beta.BetaTool;
 
@@ -41,6 +42,21 @@ export const tools: Tool[] = [
       type: "object",
       properties: { ideaId: { type: "string" }, when: { type: "string" } },
       required: ["ideaId"],
+    },
+  },
+  {
+    name: "check_free_times",
+    description:
+      "Free windows from the connected Google Calendar over the next 14 days (weeknights 6-10pm, weekends 11am-10pm, LA time). Returns a list of {start, end, label, weekend}, or an error if no calendar is connected.",
+    input_schema: { type: "object", properties: {} },
+  },
+  {
+    name: "request_booking",
+    description:
+      "Ask Claude (in the Claude app) to book the current next date. Only when they clearly ask to book. It does NOT book now: Claude looks for a table at the Sunday check-in, or sooner if they ask in the Claude app, and books only after their yes there. Set the next date first.",
+    input_schema: {
+      type: "object",
+      properties: { notes: { type: "string", description: "Anything the booker should know, e.g. 'patio if possible'" } },
     },
   },
 ];
@@ -97,6 +113,20 @@ export async function runTool(name: string, input: unknown, ctx: { userId: strin
     const data = { title: idea.title, place: idea.place, ideaId: idea.id, when, booking: idea.needsBooking ? "Needs booking" : "" };
     await prisma.plan.upsert({ where: { id: "next" }, update: data, create: { id: "next", ...data } });
     return ["saved", `Set next date: ${idea.title}`];
+  }
+  if (name === "check_free_times") {
+    const slots = await freeSlots();
+    return [JSON.stringify(slots.slice(0, 20)), "Checked the calendar"];
+  }
+  if (name === "request_booking") {
+    const notes = z.object({ notes: z.string().max(400).optional().default("") }).parse(input ?? {}).notes;
+    const plan = await prisma.plan.findUnique({ where: { id: "next" } });
+    if (!plan) throw new Error("Set the next date first");
+    const open = await prisma.bookingRequest.findFirst({ where: { ideaId: plan.ideaId, status: { in: ["requested", "searching", "awaiting_yes"] } } });
+    if (!open) {
+      await prisma.bookingRequest.create({ data: { ideaId: plan.ideaId, title: plan.title, place: plan.place, when: plan.when, notes, requestedById: ctx.userId } });
+    }
+    return ["queued", `Asked Claude to book “${plan.title}”`];
   }
   throw new Error(`Unknown tool ${name}`);
 }

@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { agentDenied } from "@/lib/agent-auth";
+import { CalendarError } from "@/lib/google";
+import { freeSlots, type FreeSlot } from "@/lib/free-slots";
 
 export const dynamic = "force-dynamic";
 
@@ -8,6 +10,16 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request) {
   const denied = agentDenied(req);
   if (denied) return denied;
+  let freeTimes: FreeSlot[] | { error: string } = [];
+  try {
+    freeTimes = await freeSlots();
+  } catch (e) {
+    freeTimes = { error: e instanceof CalendarError ? e.message : "Calendar unavailable" };
+  }
+  const bookings = await prisma.bookingRequest.findMany({
+    where: { status: { in: ["requested", "searching", "awaiting_yes"] } },
+    orderBy: { createdAt: "asc" },
+  });
   const [ideas, plan, lastCheckin, recent] = await Promise.all([
     prisma.idea.findMany({ where: { status: "jar" }, include: { dates: { select: { date: true }, orderBy: { date: "asc" } } } }),
     prisma.plan.findUnique({ where: { id: "next" } }),
@@ -29,5 +41,7 @@ export async function GET(req: Request) {
     plan: plan && { title: plan.title, place: plan.place, ideaId: plan.ideaId, when: plan.when, booking: plan.booking },
     lastCheckin: lastCheckin?.value ?? null,
     recentDates: recent.map((r) => ({ title: r.idea.title, date: r.date.toISOString().slice(0, 10) })),
+    freeTimes,
+    bookings: bookings.map((b) => ({ id: b.id, ideaId: b.ideaId, title: b.title, place: b.place, when: b.when, partySize: b.partySize, notes: b.notes, status: b.status, result: b.result })),
   });
 }

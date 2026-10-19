@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { addIdea, clearNextDate, logDate, makeNextDate, removeIdea, setNextDateTime } from "@/app/actions";
+import { addIdea, cancelBooking, clearNextDate, logDate, makeNextDate, markBooked, removeIdea, requestBooking, setNextDateTime } from "@/app/actions";
+import FreeTimes from "./FreeTimes";
 import Chat from "./Chat";
 
 export type IdeaView = {
@@ -17,6 +18,30 @@ export type IdeaView = {
   dates: string[]; // YYYY-MM-DD, oldest first
 };
 export type PlanView = { title: string; place: string; when: string | null; booking: string };
+export type CalendarView = { configured: boolean; mine: string | null; anyConnected: boolean };
+export type BookingView = { id: string; status: string; result: string };
+
+const BOOKING_STATUS: Record<string, string> = {
+  requested: "Claude will look for a table at the Sunday check-in, or sooner if you ask Claude in the app.",
+  searching: "Claude is looking for a table.",
+  awaiting_yes: "Claude found a table. Reply yes in the Claude app to book it.",
+  booked: "Booked.",
+  failed: "Claude couldn't book this one.",
+};
+
+// Search pages on OpenTable and Resy, filled in with the place, day, time and 2 people (LA time).
+function tableLinks(plan: PlanView) {
+  const when = plan.when ? new Date(plan.when) : null;
+  const part = (opts: Intl.DateTimeFormatOptions) => (when ? new Intl.DateTimeFormat("en-CA", { timeZone: "America/Los_Angeles", ...opts }).format(when) : "");
+  const day = when ? part({ year: "numeric", month: "2-digit", day: "2-digit" }) : "";
+  const time = when ? part({ hour: "2-digit", minute: "2-digit", hourCycle: "h23" }) : "19:00";
+  const term = plan.place || plan.title;
+  const ot = new URL("https://www.opentable.com/s");
+  ot.search = new URLSearchParams({ term, covers: "2", ...(day ? { dateTime: `${day}T${time}` } : {}) }).toString();
+  const resy = new URL("https://resy.com/cities/la/search");
+  resy.search = new URLSearchParams({ query: term, seats: "2", ...(day ? { date: day } : {}) }).toString();
+  return { openTable: ot.toString(), resy: resy.toString() };
+}
 type HistoryView = { id: string; title: string; date: string };
 
 const fmtDay = (day: string) =>
@@ -56,7 +81,21 @@ function pickWeighted(pool: IdeaView[]) {
   return pool[0];
 }
 
-export default function Jar({ ideas, plan, history, email }: { ideas: IdeaView[]; plan: PlanView | null; history: HistoryView[]; email: string }) {
+export default function Jar({
+  ideas,
+  plan,
+  history,
+  email,
+  calendar,
+  booking,
+}: {
+  ideas: IdeaView[];
+  plan: PlanView | null;
+  history: HistoryView[];
+  email: string;
+  calendar: CalendarView;
+  booking: BookingView | null;
+}) {
   const [pending, startTransition] = useTransition();
   const [costFilter, setCostFilter] = useState<string | null>(null);
   const [settingFilter, setSettingFilter] = useState<string | null>(null);
@@ -127,6 +166,28 @@ export default function Jar({ ideas, plan, history, email }: { ideas: IdeaView[]
                 <button className="btn btn-sm text-on-dusk underline" onClick={() => run(clearNextDate)}>Clear</button>
               </div>
             )}
+            {plan!.booking === "Needs booking" && (
+              <div className="grid gap-2 border-t border-on-dusk/20 pt-3">
+                {booking && booking.status !== "booked" ? (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-sm text-on-dusk/85">{BOOKING_STATUS[booking.status] ?? booking.status}{booking.result && ` ${booking.result}`}</p>
+                    {booking.status !== "failed" && (
+                      <button className="text-sm text-on-dusk underline" disabled={pending} onClick={() => run(() => cancelBooking(booking.id), "Booking request cancelled.")}>Cancel request</button>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-sm text-on-dusk/85">This one needs a reservation.</p>
+                )}
+                <div className="flex flex-wrap gap-2">
+                  <a className="btn btn-sm bg-on-dusk text-dusk" href={tableLinks(plan!).openTable} target="_blank" rel="noreferrer">Find a table: OpenTable</a>
+                  <a className="btn btn-sm bg-on-dusk text-dusk" href={tableLinks(plan!).resy} target="_blank" rel="noreferrer">Resy</a>
+                  {(!booking || booking.status === "failed") && (
+                    <button className="btn btn-sm border border-on-dusk/40 text-on-dusk" disabled={pending} onClick={() => run(() => requestBooking(""), "Asked Claude to book it.")}>Ask Claude to book</button>
+                  )}
+                  <button className="btn btn-sm text-on-dusk underline" disabled={pending} onClick={() => run(markBooked, "Marked as booked.")}>We booked it</button>
+                </div>
+              </div>
+            )}
           </>
         ) : (
           <>
@@ -135,6 +196,8 @@ export default function Jar({ ideas, plan, history, email }: { ideas: IdeaView[]
           </>
         )}
       </section>
+
+      <FreeTimes calendar={calendar} />
 
       <Chat />
 
@@ -167,7 +230,7 @@ export default function Jar({ ideas, plan, history, email }: { ideas: IdeaView[]
               </button>
               <button className="btn-ghost btn-sm" onClick={surprise}>Pull again</button>
             </div>
-            {picked.needsBooking && <p className="text-sm text-muted">This one needs a booking. Ask Claude in the app to find a table; it will check with you before booking.</p>}
+            {picked.needsBooking && <p className="text-sm text-muted">This one needs a booking. Make it your next date, then use Find a table or Ask Claude to book on the card at the top.</p>}
           </div>
         )}
       </section>

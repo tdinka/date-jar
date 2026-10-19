@@ -84,6 +84,11 @@ export default function LoginPage() {
       )}
 
       {error && <p role="alert" className="text-sm font-semibold text-ink">{error}</p>}
+
+      <p className="text-sm text-muted">
+        A private app for one couple to collect date ideas and plan dates. Only invited emails can sign in.{" "}
+        <a className="underline" href="/privacy">Privacy</a>
+      </p>
     </main>
   );
 }

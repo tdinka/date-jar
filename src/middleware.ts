@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { SESSION_COOKIE, readSessionToken } from "@/lib/session";
 
-// Everything is private except the login page, sign-in API, the check-in API (has its own token) and static files.
+// Everything is private except the login and privacy pages, sign-in API, the check-in API (has its own token) and static files.
 export async function middleware(req: NextRequest) {
   const session = await readSessionToken(req.cookies.get(SESSION_COOKIE)?.value);
   if (session) return NextResponse.next();
@@ -12,5 +12,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!login|api/auth|api/agent|_next/static|_next/image|favicon.ico|icon|apple-icon|manifest.webmanifest).*)"],
+  matcher: ["/((?!login|privacy|api/auth|api/agent|_next/static|_next/image|favicon.ico|icon|apple-icon|manifest.webmanifest).*)"],
 };
